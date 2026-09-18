@@ -6,48 +6,67 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-GOLD = '#b1883c'
-TEAL = '#37867b'
-INK = '#493e2f'
+GOLD = '#3488FF'
+TEAL = '#25D99A'
+INK = '#AFC2D9'
 
 
 def theme():
+    """Keep BI components aligned with the global dark dashboard theme."""
     st.markdown('''<style>
-    .stApp{background:#f8f6f1;color:#352e25}
-    [data-testid="stSidebar"]{background:#eee7da!important}
-    [data-testid="stSidebar"] *{color:#493e2f!important}
-    .block-container{max-width:1400px;padding-top:2rem}
-    [data-testid="stVerticalBlockBorderWrapper"]>div{border-color:#e7e0d3!important;border-radius:16px!important;background:#fffdf9}
-    [data-testid="stMetric"]{background:#fffdf9;border:1px solid #e7e0d3;border-radius:14px;padding:18px 22px}
-    [data-testid="stMetricValue"]{font-family:Georgia,serif;color:#715625}
-    .stButton>button[kind="primary"]{background:#9a742f;border-color:#9a742f;color:white}
-    .px-eyebrow{font-size:13px;letter-spacing:2px;color:#98763a;margin:0 0 5px}
-    .px-business{padding:20px 22px;border-left:3px solid #b1883c;background:#f4efe4;border-radius:0 12px 12px 0;font-size:16px;line-height:1.8}
-    h1,h2,h3{color:#493e2f!important;letter-spacing:-.03em}
+    .px-business {
+      padding:20px 22px;
+      color:#D7E4F3;
+      background:linear-gradient(135deg,#112A44,#0D2035);
+      border-left:3px solid #3488FF;
+      border-radius:0 12px 12px 0;
+      font-size:15px;
+      line-height:1.75;
+    }
     </style>''', unsafe_allow_html=True)
 
 
 def draw(chart):
-    st.altair_chart(chart.configure(background='#fffdf9').configure_view(stroke=None)
-                    .configure_axis(labelColor=INK,titleColor=INK,gridColor='#eee8dd',labelFontSize=13,titleFontSize=13)
-                    .configure_legend(labelColor=INK,titleColor=INK,labelFontSize=13), use_container_width=True)
+    st.altair_chart(
+        chart.configure(background='#0D1C2E')
+        .configure_view(stroke=None)
+        .configure_axis(
+            labelColor=INK,
+            titleColor=INK,
+            gridColor='#1D3550',
+            domainColor='#2A4767',
+            tickColor='#2A4767',
+            labelFontSize=12,
+            titleFontSize=12,
+        )
+        .configure_legend(labelColor=INK, titleColor=INK, labelFontSize=12),
+        use_container_width=True,
+    )
 
 
 def overview(details, snapshot):
     reports = [r for _, r, _, _ in details.values() if r]
     positions = (snapshot or {}).get('positions', [])
-    a,b,c = st.columns(3)
+    a, b, c, d = st.columns(4)
     if positions:
         value = sum(float(p['value']) for p in positions)
         pnl = sum(float(p['pnl']) for p in positions)
-        a.metric('국내주식 평가금액', f'{value:,.0f}원')
-        b.metric('평가손익', f'{pnl:+,.0f}원', f'{pnl/(value-pnl)*100:+.1f}%' if value-pnl>0 else None)
-        c.metric('보유 / 관심종목', f'{len(positions)} / {len(details)}')
-        st.caption('계좌 조회 시점 기준 · 예수금 제외 · ' + str(snapshot.get('fetched','')))
+        cash_raw = snapshot.get('cash')
+        cash = float(cash_raw) if isinstance(cash_raw, (int, float)) else None
+        total = value + (cash or 0)
+        cost = value - pnl
+        return_rate = pnl / cost * 100 if cost > 0 else None
+        cash_weight = cash / total * 100 if cash is not None and total > 0 else None
+        a.metric('총 자산', f'{total:,.0f}원')
+        b.metric('평가손익', f'{pnl:+,.0f}원', f'{return_rate:+.2f}%' if return_rate is not None else None)
+        c.metric('누적 수익률', f'{return_rate:+.2f}%' if return_rate is not None else '산출 불가')
+        d.metric('현금 비중', f'{cash_weight:.1f}%' if cash_weight is not None else '미수집')
+        st.caption('계좌 조회 시점 기준 · ' + str(snapshot.get('fetched','')))
     else:
         a.metric('내 관심종목', f'{len(details)}개')
         b.metric('조사 자료 보유', f'{len(reports)}개')
         c.metric('추가 조사 필요', f'{len(details)-len(reports)}개')
+        d.metric('계좌 연결', '대기 중')
     left,right=st.columns([1,1.5],gap='large')
     with left, st.container(border=True):
         st.subheader('어디에 투자하고 있나요?')
