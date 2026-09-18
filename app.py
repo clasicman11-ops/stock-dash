@@ -236,9 +236,18 @@ if latest:
 if st.session_state.get("force_nav"):
     st.session_state.nav_choice = st.session_state.pop("force_nav")
 
-NAV_ITEMS = ["내 종목", "계좌 연결", "교육자료", "설정"]
-legacy = {"통합 분석":"내 종목", "홈":"내 종목", "AI 인사이트":"내 종목", "관심 종목":"내 종목", "포트폴리오":"계좌 연결"}
-current = st.session_state.get("nav_choice", "내 종목")
+NAV_ITEMS = ["대시보드", "포트폴리오", "관심종목", "시장동향", "리포트", "설정"]
+legacy = {
+    "통합 분석": "대시보드",
+    "홈": "대시보드",
+    "내 종목": "대시보드",
+    "AI 인사이트": "대시보드",
+    "관심 종목": "관심종목",
+    "계좌 연결": "포트폴리오",
+    "시장 현황": "시장동향",
+    "종목 분석": "리포트",
+}
+current = st.session_state.get("nav_choice", "대시보드")
 if current not in NAV_ITEMS:
     st.session_state.nav_choice = legacy.get(current, "설정")
     if current not in legacy:
@@ -717,25 +726,32 @@ def render_placeholder(title, subtitle, required):
                 st.caption(cap)
 
 
-if nav == "내 종목":
+if nav == "대시보드":
     render_research(store, state, sample_mode)
-elif nav == "계좌 연결":
+elif nav == "포트폴리오":
     render_portfolio(store, sample_mode)
-elif nav == "교육자료":
-    render_education()
+elif nav == "관심종목":
+    render_watchlist()
+elif nav == "시장동향":
+    render_market()
+elif nav == "리포트":
+    render_stock()
 else:
     st.header("설정과 추가 도구")
-    st.caption("계좌 연결 없이도 내 종목을 추가하고 조사 결과를 확인할 수 있습니다.")
-    options = ["사용 안내", "데이터 연결 관리", "종목 분석", "공시 분석", "시장 현황", "테마 & 섹터"]
+    st.caption("데이터 연결, 공시, 교육자료와 확장 기능을 관리합니다.")
+    options = ["사용 안내", "데이터 연결 관리", "공시 분석", "테마 & 섹터", "교육자료"]
     previous = st.session_state.get("advanced_page", "사용 안내")
-    if previous not in options: st.session_state.advanced_page = "사용 안내"
+    if previous not in options:
+        st.session_state.advanced_page = "사용 안내"
     page = st.selectbox("필요한 도구", options, key="advanced_page")
     if page == "사용 안내":
-        st.markdown("**1. 내 종목**에서 기업 이름을 추가하세요.\n\n**2. 조사 요청**을 열어 요청문을 이 채팅에 보내세요.\n\n**3. 종목을 선택**해 핵심 요약과 자세한 근거를 확인하세요.")
+        st.markdown("**1. 대시보드**에서 기업 이름을 추가하세요.\n\n**2. 조사 요청**을 열어 요청문을 이 채팅에 보내세요.\n\n**3. 리포트**에서 핵심 요약과 근거를 확인하세요.")
         st.link_button("상세 사용 안내", "https://github.com/planxs-ai/stock-dash/blob/main/CHAT-RESEARCH.md")
-    elif page == "데이터 연결 관리": render_sources()
-    elif page == "종목 분석": render_stock()
-    elif page == "공시 분석": render_disclosures()
-    elif page == "시장 현황": render_market()
+    elif page == "데이터 연결 관리":
+        render_sources()
+    elif page == "공시 분석":
+        render_disclosures()
+    elif page == "교육자료":
+        render_education()
     else:
         render_placeholder("테마 & 섹터", "산업별 흐름을 확인합니다.", [("업종 강도", "sector.performance", "업종별 등락과 거래대금"), ("업종 수급", "sector.flow", "외국인·기관 자금 흐름"), ("산업 수출", "industry.export", "품목별 수출 변화")])
